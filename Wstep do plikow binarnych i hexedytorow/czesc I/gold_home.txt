@@ -1,0 +1,6 @@
+PLAYER 
+pos X = 1
+pos Y = 3
+XP = 15
+gold = 17
+inventory = NULL (puste)
