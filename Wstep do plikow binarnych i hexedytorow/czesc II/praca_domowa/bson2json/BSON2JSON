@@ -1,0 +1,40 @@
+BSON :
+{
+    "bool": true,
+    "null": null,
+    "array": [
+        true,
+        1,
+        2.3
+    ],
+    "dict": {
+        "a": "b",
+        "c": {
+            "d": "e"
+        }
+    },
+    "string": "string",
+    "number": -1.23,
+    "int": 123
+}
+
+
+JSON:
+{
+    "bool": true,
+    "null": null,
+    "array": [
+        true,
+        1,
+        2.3
+    ],
+    "dict": {
+        "a": "b",
+        "c": {
+                "d": "e"
+        },
+    },
+    "string": "string",
+    "number": -1.23,
+    "int": 123
+}
