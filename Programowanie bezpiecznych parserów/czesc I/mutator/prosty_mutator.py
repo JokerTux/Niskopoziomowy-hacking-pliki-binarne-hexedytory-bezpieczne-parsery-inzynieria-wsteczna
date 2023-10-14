@@ -8,7 +8,7 @@ def read_bytes(f, n):
 
 
 if len(sys.argv) < 2:
-	sys.exit('usage: mut.py <fname>')
+	sys.exit('usage: prosty_mutator.py <fname>')
 
 infile = sys.argv[1]
 outfile = sys.argv[1] + '.mut'
