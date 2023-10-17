@@ -2,6 +2,15 @@ import struct
 import sys
 
 
+def height_widht(f):
+	f.seek(18)
+	width = f.read(4)
+	width = struct.unpack('<I', width)[0]
+	f.seek(22)
+	height = f.read(4)
+	height = struct.unpack('<I', height)[0]
+	return width, height
+
 def bytes_bmp(f):
 	f.seek(10)
 	bmp_start_off = f.read(4)
@@ -42,19 +51,34 @@ def colors(f):
 		raise Exception('This file has no color palette.')
 	return color_BGR_hex_val
 
-def export_file(f, data_size, outfile, start_off, color_palette):
+def export_file(f, data_size, outfile, start_off, color_palette, width):
 	buf = b''
 	test_list = []
-	bytes(test_list)	
+	bytes(test_list)
 	for buff_val in range(start_off, data_size, 1):
 		f.seek(buff_val)
 		color_index = f.read(1)
 		color_index = struct.unpack('<B', color_index)[0]
 		# buf += color_palette[color_index]
-		test_list.append(color_palette[color_index])		
+		test_list.append(color_palette[color_index])
+	
+	# loading the scanlines upside down
+	# na te chwile wpisze recznie ale zakoduj bmp width
+	step = width #file width 
+	end_of_bytes_list = len(test_list)
+	for scanline in range(end_of_bytes_list, 0, -(step)):		
+		end_of_bytes_list -= step
+		if scanline <= step :
+			end_of_bytes_list = 0			
+			for by in test_list[scanline::-1]:
+				buf += by
+			break
+		for b in test_list[end_of_bytes_list:scanline]:
+			buf += b
+		
 	with open(outfile, 'wb') as f_out:
-		for a in test_list:
-			f_out.write(a)
+		f_out.write(buf)
+
 	return f_out
 
 
@@ -68,9 +92,9 @@ if __name__ == '__main__':
 
 	with open(infile, 'rb') as f:
 		file_lenght = len(f.read())
-		print(file_lenght)
-
 		start_off = bytes_bmp(f)
 		color_palette = bit_version_check(f)
-		print(start_off)
-		outfile = export_file(f, file_lenght, outfile, start_off, color_palette)
+		width, height = height_widht(f)
+		print(f'{file_lenght} bytes, {width} width, {height} height.')
+		outfile = export_file(f, file_lenght, outfile, start_off, color_palette, width)
+		sys.exit(0)
