@@ -23,7 +23,7 @@ def bit_version_check(f):
 	color_depth = f.read(2)
 	color_depth = struct.unpack('<H', color_depth)[0]
 	if color_depth == 8:
-		print(f'BMB uses a color palette, color depth = {color_depth}')
+		print(f'BMP uses a color palette, color depth = {color_depth}')
 		color_palette = colors(f)
 	return color_palette
 
@@ -38,7 +38,7 @@ def colors(f):
 	if color_fields == 0:
 		current_position = 54
 		print('256 colors has been declared.')
-		#0x400 = 1024 | 256 (colors) * 4 (bytes) = 1024
+		#0x400 = 1024 | 256 (colors) * 4 (bytes)= 1024. 3x hex values and 0 acts like \n
 		for color_bytes in range(0, 0x400, 4):
 			f.seek(current_position + color_bytes)
 			# BGR to RGB
@@ -59,28 +59,26 @@ def export_file(f, data_size, outfile, start_off, color_palette, width):
 		f.seek(buff_val)
 		color_index = f.read(1)
 		color_index = struct.unpack('<B', color_index)[0]
-		# buf += color_palette[color_index]
 		test_list.append(color_palette[color_index])
 	
 	# loading the scanlines upside down
-	# na te chwile wpisze recznie ale zakoduj bmp width
 	step = width #file width 
 	end_of_bytes_list = len(test_list)
-	for scanline in range(end_of_bytes_list, 0, -(step)):		
+	for scanline in range(end_of_bytes_list, 0, -(step)):
 		end_of_bytes_list -= step
-		if scanline <= step :
-			end_of_bytes_list = 0			
+		if scanline == step :
+			end_of_bytes_list = 0
+			scanline = (scanline - 1)
 			for by in test_list[scanline::-1]:
 				buf += by
 			break
 		for b in test_list[end_of_bytes_list:scanline]:
 			buf += b
-		
+	
+	new_size = len(buf)
 	with open(outfile, 'wb') as f_out:
-		f_out.write(buf)
-
-	return f_out
-
+		f_out.write(buf)	
+	return f_out, new_size
 
 if __name__ == '__main__':
 
@@ -95,6 +93,6 @@ if __name__ == '__main__':
 		start_off = bytes_bmp(f)
 		color_palette = bit_version_check(f)
 		width, height = height_widht(f)
-		print(f'{file_lenght} bytes, {width} width, {height} height.')
-		outfile = export_file(f, file_lenght, outfile, start_off, color_palette, width)
+		outfile, new_size = export_file(f, file_lenght, outfile, start_off, color_palette, width)
+		print(f'{file_lenght} [bytes] file size, {width} width, {height} height, {new_size} [bytes] new file size.')
 		sys.exit(0)
