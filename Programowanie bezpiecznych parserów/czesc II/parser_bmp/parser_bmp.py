@@ -55,6 +55,7 @@ def export_file(f, data_size, outfile, start_off, color_palette, width):
 	buf = b''
 	test_list = []
 	bytes(test_list)
+
 	for buff_val in range(start_off, data_size, 1):
 		f.seek(buff_val)
 		color_index = f.read(1)
@@ -66,19 +67,21 @@ def export_file(f, data_size, outfile, start_off, color_palette, width):
 	end_of_bytes_list = len(test_list)
 	for scanline in range(end_of_bytes_list, 0, -(step)):
 		end_of_bytes_list -= step
-		if scanline == step :
+		if scanline <= step :
 			end_of_bytes_list = 0
+			scanline = width
 			scanline = (scanline - 1)
-			for by in test_list[scanline::-1]:
+			for by in test_list[scanline::-1][::-1]:
 				buf += by
 			break
 		for b in test_list[end_of_bytes_list:scanline]:
 			buf += b
-	
+
 	new_size = len(buf)
 	with open(outfile, 'wb') as f_out:
-		f_out.write(buf)	
+		f_out.write(buf)
 	return f_out, new_size
+
 
 if __name__ == '__main__':
 
