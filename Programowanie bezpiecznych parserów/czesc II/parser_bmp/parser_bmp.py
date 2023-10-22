@@ -17,7 +17,31 @@ def bytes_bmp(f):
 	bmp_start_off = struct.unpack('<I', bmp_start_off)[0]
 	return bmp_start_off
 
-def bit_version_check(f):
+def bit_version_check(f ,file_lenght):
+	f.seek(0)
+	header_info = f.read(2)
+	if header_info.hex() != '424d':
+		raise Exception('Unsupported file type')
+
+	f.seek(2)
+	file_size = f.read(4)
+	file_size = struct.unpack('<I', file_size)[0]
+	if file_size != file_lenght:
+		print(file_size, file_lenght)
+		raise Exception('Declared bytes size is not equal to the actual file size')	
+
+	f.seek(14)
+	bmp_info_header = f.read(4)
+	bmp_info_header = struct.unpack('<I', bmp_info_header)[0]
+	if bmp_info_header != 40:
+		raise Exception('BITMAPINFOHEADER != 40')
+
+	f.seek(30)
+	compression_method= f.read(4)
+	compression_method = struct.unpack('<I', compression_method)[0]
+	if compression_method != 0:
+		raise Exception('Wrong compression method')		
+		
 	f.seek(28)
 	#if color depth = 8, color palette is used.
 	color_depth = f.read(2)
@@ -34,9 +58,9 @@ def colors(f):
 	# if 0 = 256 colors-specification.
 	color_fields = f.read(4)
 	color_fields = struct.unpack('<I', color_fields)[0]
+	current_position = 54
 
 	if color_fields == 0:
-		current_position = 54
 		print('256 colors has been declared.')
 		#0x400 = 1024 | 256 (colors) * 4 (bytes)= 1024. 3x hex values and 0 acts like \n
 		for color_bytes in range(0, 0x400, 4):
@@ -44,11 +68,17 @@ def colors(f):
 			# BGR to RGB
 			color = f.read(3)[::-1]
 			color_BGR_hex_val.append(color)
-	
-	#elif: other palettes with less colors : 
-			
+
+	elif color_fields >= 1 and color_fields <= 255:
+		print(f'{color_fields} colors has been declared')
+		color_fields = color_fields * 4
+		for color_bytes in range(0, color_fields, 4):
+			f.seek(current_position + color_bytes)
+			# BGR to RGB
+			color = f.read(3)[::-1]
+			color_BGR_hex_val.append(color)
 	else:
-		raise Exception('This file has no color palette.')
+		raise Exception('Color palette is empty.')	
 	return color_BGR_hex_val
 
 def export_file(f, data_size, outfile, start_off, color_palette, width):
@@ -93,8 +123,8 @@ if __name__ == '__main__':
 
 	with open(infile, 'rb') as f:
 		file_lenght = len(f.read())
+		color_palette = bit_version_check(f, file_lenght)
 		start_off = bytes_bmp(f)
-		color_palette = bit_version_check(f)
 		width, height = height_widht(f)
 		outfile, new_size = export_file(f, file_lenght, outfile, start_off, color_palette, width)
 		print(f'{file_lenght} [bytes] file size, {width} width, {height} height, {new_size} [bytes] new file size.')
