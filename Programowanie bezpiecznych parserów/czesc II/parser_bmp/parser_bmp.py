@@ -3,13 +3,24 @@ import sys
 
 
 def height_widht(f):
+	max_lenght = 10000
 	f.seek(18)
 	width = f.read(4)
 	width = struct.unpack('<I', width)[0]
 	f.seek(22)
 	height = f.read(4)
 	height = struct.unpack('<I', height)[0]
-	return width, height
+	
+	if width <= 0 or width > max_lenght:
+		raise Exception('Invalid width')
+
+	upside_down_flag = True
+	if height == 0 or height >= max_lenght:
+		raise Exception('Invalid height')
+	if height < 0:
+		upside_down_flag = False
+
+	return width, height, upside_down_flag
 
 def bytes_bmp(f):
 	f.seek(10)
@@ -78,44 +89,57 @@ def colors(f):
 			color = f.read(3)[::-1]
 			color_BGR_hex_val.append(color)
 	else:
-		raise Exception('Color palette is empty.')	
+		raise Exception('Invalid palette size.')	
 	return color_BGR_hex_val
 
-def export_file(f, data_size, outfile, start_off, color_palette, width):
+def export_file(f, data_size, outfile, start_off, color_palette, width, upside_down_flag):
 	buf = b''
 	test_list = []
 	bytes(test_list)
 
-	for buff_val in range(start_off, data_size, 1):
-		f.seek(buff_val)
-		color_index = f.read(1)
-		color_index = struct.unpack('<B', color_index)[0]
-		test_list.append(color_palette[color_index])
-	
-	# loading the scanlines upside down
-	step = width #file width 
-	end_of_bytes_list = len(test_list)
-	for scanline in range(end_of_bytes_list, 0, -(step)):
-		end_of_bytes_list -= step
-		if scanline <= step :
-			end_of_bytes_list = 0
-			scanline = width
-			scanline = (scanline - 1)
-			for by in test_list[scanline::-1][::-1]:
-				buf += by
-			break
-		for b in test_list[end_of_bytes_list:scanline]:
-			buf += b
+	scanline_w = width
+	if width % 4:
+		scanline_w = 4 -(scanline_w % 4)
+		_a = width + scanline_w
+		for byte_val in range(start_off,data_size, _a):
+			f.seek(byte_val)
+			indexes = f.read(width)
+			for index in indexes:
+				test_list.append(color_palette[index])		
+	else:
+		for buff_val in range(start_off, data_size, 1):
+			f.seek(buff_val)
+			color_index = f.read(1)
+			color_index = struct.unpack('<B', color_index)[0]
+			test_list.append(color_palette[color_index])
 
-	new_size = len(buf)
-	with open(outfile, 'wb') as f_out:
-		f_out.write(buf)
+	# loading the scanlines upside down
+	if upside_down_flag == True:
+		step = width #file width 
+		end_of_bytes_list = len(test_list)
+		for scanline in range(end_of_bytes_list, 0, -(step)):
+			end_of_bytes_list -= step
+			if scanline <= step :
+				end_of_bytes_list = 0
+				scanline = width
+				scanline = (scanline - 1)
+				for by in test_list[scanline::-1][::-1]:
+					buf += by
+				break
+			for b in test_list[end_of_bytes_list:scanline]:
+				buf += b
+
+		new_size = len(buf)
+		with open(outfile, 'wb') as f_out:
+			f_out.write(buf)
+	else:
+		print(test_list)		
 	return f_out, new_size
 
 
 if __name__ == '__main__':
 
-	if len(sys.argv) < 2:
+	if len(sys.argv) != 2:
 		sys.exit('usage: parser_bmp.py <file.bmp>')
 
 	infile = sys.argv[1]
@@ -125,7 +149,7 @@ if __name__ == '__main__':
 		file_lenght = len(f.read())
 		color_palette = bit_version_check(f, file_lenght)
 		start_off = bytes_bmp(f)
-		width, height = height_widht(f)
-		outfile, new_size = export_file(f, file_lenght, outfile, start_off, color_palette, width)
+		width, height, upside_down_flag = height_widht(f)
+		outfile, new_size = export_file(f, file_lenght, outfile, start_off, color_palette, width, upside_down_flag)
 		print(f'{file_lenght} [bytes] file size, {width} width, {height} height, {new_size} [bytes] new file size.')
 		sys.exit(0)
