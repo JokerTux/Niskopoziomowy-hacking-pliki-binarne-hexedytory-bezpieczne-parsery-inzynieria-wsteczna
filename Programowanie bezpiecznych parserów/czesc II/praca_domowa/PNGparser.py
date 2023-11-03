@@ -20,7 +20,9 @@ def verification(f):
 
 def chunk_info(f, total_bytes):
 	current_pos = 8
-	end_file = total_bytes - current_pos
+	# 12 Bytes = 4B lenght, 4B name, 4B crc.
+	_bytes = 12
+	chunk_name_cmp = None
 	for new_chunk in f:
 		f.seek(current_pos)
 		chunk = f.read(8)
@@ -28,10 +30,24 @@ def chunk_info(f, total_bytes):
 		chunk_name = hex(chunk_name)
 		chunk_name = bytearray.fromhex(chunk_name[2:]).decode('utf-8')
 		print(f'chunk name = {chunk_name}, chunk size = {chunk_size} [B]')
+		f.seek(current_pos)
+		
+		if chunk_name != chunk_name_cmp:
+			buf = f.read(chunk_size + _bytes)[8:-4]
+			with open(f'{chunk_name}.data', 'wb') as f_out:
+				f_out.write(buf)
+		else:
+			buf = f.read(chunk_size + _bytes)[8:-4]	
+			with open(f'{chunk_name}.data', 'ab') as f_out:
+				f_out.write(buf)
+						
+		chunk_name_cmp = chunk_name		
+		# print(buf)
 		if chunk_name == 'IEND':
 			break
-		# 12 Bytes = 4B lenght, 4B name, 4B crc.
-		current_pos += chunk_size + 12
+		
+		current_pos += chunk_size + _bytes
+
 	
 
 if __name__ == '__main__':
@@ -40,8 +56,7 @@ if __name__ == '__main__':
 		sys.exit('usage: PNGparser.py <file.png>')
 
 	infile = sys.argv[1]
-	outfile = sys.argv[1] + '.data'
-
+	
 	with open(infile, 'rb') as f:
 		verification(f)
 		widht, height, total_bytes = resolution(f)
