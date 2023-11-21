@@ -78,13 +78,20 @@ def export_file(width, height, rle_bytes, color_bytes_rgb):
 		a = rle_bytes[i]
 		b = rle_bytes[j]
 		for x in range(a):
+			if a == 0 and b == 0 or a == 0 and b == 1:
+				continue	
 			indexes.append(b)
-	
+	print(indexes)
 	raw_colors = []
 	for bytes_rle in indexes:
 		raw_color = color_bytes_rgb[bytes_rle]
 		raw_colors.append(raw_color)
 	
+
+	# abc = 0
+	# for ab in raw_colors:
+	# 	abc += 1
+	# 	print(abc, ab.hex())
 	buf = b''	
 	end_of_bytes_list = len(raw_colors)	* height
 	print(end_of_bytes_list)
