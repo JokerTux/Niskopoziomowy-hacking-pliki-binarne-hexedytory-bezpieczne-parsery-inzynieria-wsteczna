@@ -43,17 +43,16 @@ def verification(f):
 	byte_check = f.read(1)
 	byte_check = struct.unpack('<B', byte_check)[0]
 	if byte_check != 0:
-		raise Exception('The color plaette is to long/short ')
-		
+		raise Exception('The color plaette is too long/short ')
+
 	_check2 = _check + 1
 	f.seek(_check2)
 	data_sz = len(f.read())
 	f.seek(34)
 	data_lenght = f.read(4)
 	data_lenght = struct.unpack('<I', data_lenght)[0]
-	if (file_size - data_lenght) != _check2:
+	if (file_sz - data_lenght) != _check2:
 		raise Exception('Offset error')
-
 
 
 def resolution(f):
